@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using WebApplication.Models;
@@ -13,16 +14,11 @@ namespace WebApplication.Controllers
         public ActionResult Index()
         {
             var db = new DataContext();
-            var tasks = db.Tasks.ToList();
+            var tasks = db.Tasks.OrderBy(x=>x.Id).ToList();
             return View(tasks);
         }
 
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        [HttpPost]
+       [HttpPost]
         public ActionResult Create(Task task)
         {
             var db = new DataContext();
@@ -32,14 +28,7 @@ namespace WebApplication.Controllers
 
             return RedirectToAction("Index");
         }
-
-        public ActionResult Edit(Int32 Id)
-        {
-            var db = new DataContext();
-            var task = db.Tasks.Single(t => t.Id == Id);
-            return View(task);
-        }
-
+             
         [HttpPost]
         public ActionResult Edit(Task task)
         {
@@ -61,7 +50,17 @@ namespace WebApplication.Controllers
             db.Tasks.Remove(task);
             db.SaveChanges();
 
-            return RedirectToAction("Index");
+            return new HttpStatusCodeResult(HttpStatusCode.OK);
+        }
+        
+        public ActionResult ChangeState(int Id)
+        {
+            var db = new DataContext();
+            var task = db.Tasks.Single(t => t.Id == Id);
+            task.Done = !task.Done;
+            db.SaveChanges();
+
+            return new HttpStatusCodeResult(HttpStatusCode.OK);
         }
     }
 }

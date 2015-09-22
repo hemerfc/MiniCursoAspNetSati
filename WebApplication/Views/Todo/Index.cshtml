@@ -1,7 +1,69 @@
-﻿
+﻿@model IEnumerable<WebApplication.Models.Task>
+
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Tasks";
 }
 
-<h2>Index</h2>
+@section scripts{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(".DoneBtn").click(function () {
+                var taskChk = $(this);
+                
+                $.get(("http://localhost:49274/Todo/ChangeState/" + taskChk.data("id")), function (data, textstatus, jqXHR) {
+                    console.log(jqXHR);
+                    if (jqXHR.status = 200) {
+                        if (taskChk.attr("checked") == "checked")
+                            taskChk.removeAttr("checked");
+                        else
+                            taskChk.attr("checked", "checked");
+
+                        $("#Name").focus();
+                    }
+
+                    /// TODO: ERRO
+                });
+            });
+
+            $(".DeleteBtn").click(function () {
+                var btn = $(this);
+
+                $.get(("http://localhost:49274/Todo/Delete/" + btn.data("id")), function (data, textstatus, jqXHR) {
+                    console.log(jqXHR);
+                    if (jqXHR.status = 200) {
+                        btn.parent().remove();
+                    }
+
+                    $("#Name").focus();
+                    /// TODO: ERRO
+                });
+            });
+
+            
+            $("#Name").focus();
+        });
+    </script>
+}
+
+<h2>@(ViewBag.Title)</h2>
+
+<ul>
+    @foreach (var item in Model)
+    {
+        <li>
+            @Html.CheckBox("Done", item.Done, new { @class= "DoneBtn", @data_id = item.Id })
+            @Html.Label("Name", item.Name, new { @class = (item.Done ? "stroke" : "") })
+            <a class="DeleteBtn" data-id="@item.Id" href="#">X</a>
+        </li>
+    }
+
+    @using (Html.BeginForm("Create","Todo",FormMethod.Post))
+    {
+    <li>
+        @Html.Editor("Name")
+        <input type="submit" value="Create task" />
+    </li>
+    }
+</ul>
+
 
