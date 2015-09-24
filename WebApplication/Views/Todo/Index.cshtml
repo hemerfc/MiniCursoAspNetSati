@@ -4,20 +4,27 @@
     ViewBag.Title = "Tasks";
 }
 
+@section styles{
+    <style type="text/css">
+        .inputTask {
+            border: none;
+        }
+    </style>
+}
+
 @section scripts{
     <script type="text/javascript">
         $(document).ready(function () {
             $(".DoneBtn").click(function () {
                 var taskChk = $(this);
-                
+
                 $.get(("http://localhost:49274/Todo/ChangeState/" + taskChk.data("id")), function (data, textstatus, jqXHR) {
-                    console.log(jqXHR);
                     if (jqXHR.status = 200) {
                         if (taskChk.attr("checked") == "checked")
                             taskChk.removeAttr("checked");
                         else
                             taskChk.attr("checked", "checked");
-
+                        
                         $("#Name").focus();
                     }
 
@@ -29,17 +36,25 @@
                 var btn = $(this);
 
                 $.get(("http://localhost:49274/Todo/Delete/" + btn.data("id")), function (data, textstatus, jqXHR) {
-                    console.log(jqXHR);
                     if (jqXHR.status = 200) {
                         btn.parent().remove();
                     }
-
+                    alert('ok');
                     $("#Name").focus();
                     /// TODO: ERRO
                 });
             });
 
-            
+            $('label').click(function () {
+                var label = $(this);
+                var input = ('<input type="text" class="inputTask" value="' + label.html() + '" />');
+                var li = label.parent();
+
+
+                label.replaceWith(input);
+                li.find('.inputTask').focus();
+            });
+
             $("#Name").focus();
         });
     </script>
@@ -51,19 +66,17 @@
     @foreach (var item in Model)
     {
         <li>
-            @Html.CheckBox("Done", item.Done, new { @class= "DoneBtn", @data_id = item.Id })
+            @Html.CheckBox("Done", item.Done, new { @class = "DoneBtn", @data_id = item.Id })
             @Html.Label("Name", item.Name, new { @class = (item.Done ? "stroke" : "") })
             <a class="DeleteBtn" data-id="@item.Id" href="#">X</a>
         </li>
     }
 
-    @using (Html.BeginForm("Create","Todo",FormMethod.Post))
+    @using (Html.BeginForm("Create", "Todo", FormMethod.Post))
     {
-    <li>
-        @Html.Editor("Name")
-        <input type="submit" value="Create task" />
-    </li>
+        <li>
+            @Html.Editor("Name")
+            <input type="submit" value="Create task" />
+        </li>
     }
 </ul>
-
-
