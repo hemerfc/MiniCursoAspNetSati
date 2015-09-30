@@ -17,15 +17,23 @@
         $(document).ready(function () {
             $(".DoneBtn").click(function () {
                 var taskChk = $(this);
+                var id = taskChk.parent().data("id");
+                //var name = taskChk.parent().find("input[type=text]").val();
+                var name = taskChk.parent().find(".inputTask").val();
+                var done = taskChk.attr("checked") == "checked";
 
-                $.get(("http://localhost:49274/Todo/ChangeState/" + taskChk.data("id")), function (data, textstatus, jqXHR) {
+                Update(id, name, done, function () {
+                    if (taskChk.attr("checked") == "checked")
+                        taskChk.removeAttr("checked");
+                    else
+                        taskChk.attr("checked", "checked");
+
+                    $("#Name").focus();
+                });
+
+                $.get(("http://localhost:49274/Todo/ChangeState/" + taskChk.parent().data("id")), function (data, textstatus, jqXHR) {
                     if (jqXHR.status = 200) {
-                        if (taskChk.attr("checked") == "checked")
-                            taskChk.removeAttr("checked");
-                        else
-                            taskChk.attr("checked", "checked");
-                        
-                        $("#Name").focus();
+
                     }
 
                     /// TODO: ERRO
@@ -35,40 +43,75 @@
             $(".DeleteBtn").click(function () {
                 var btn = $(this);
 
-                $.get(("http://localhost:49274/Todo/Delete/" + btn.data("id")), function (data, textstatus, jqXHR) {
-                    if (jqXHR.status = 200) {
-                        btn.parent().remove();
-                    }
-                    alert('ok');
-                    $("#Name").focus();
-                    /// TODO: ERRO
-                });
+                DeleteTask(btn.parent().data("id"), btn.parent());
             });
 
-            $('label').click(function () {
-                var label = $(this);
-                var input = ('<input type="text" class="inputTask" value="' + label.html() + '" />');
-                var li = label.parent();
+            $("#taskList").on('blur', '.inputTask', null, function () {
+                var input = $(this);
+                var id = input.parent().data("id");
+                var name = input.val();
+                var done = input.parent().find("input[type=checkbox]").attr("checked") == "checked";
 
-
-                label.replaceWith(input);
-                li.find('.inputTask').focus();
+                if (typeof name === "undefined" || name == "") {
+                    DeleteTask(id, input.parent());
+                } else {
+                    Update(id, name, done, function () {
+                        $("#Name").focus();
+                    });
+                }
             });
 
             $("#Name").focus();
+
+            // SIGNALR
+            // Referencia o hub do signalr
+            var tasksHub = $.connection.tasksHub;
+            // a mensagem de broadcast
+            tasksHub.client.newtask = function (task) {
+                console.log(task);
+            };
+
+            // Inicia a conexao
+            $.connection.hub.start().done(function () {
+                // chat.server.newtask($('#displayname').val(), $('#message').val());
+            });
         });
+
+        function DeleteTask(id, element) {
+            $.get(("http://localhost:49274/Todo/Delete/" + id), function (data, textstatus, jqXHR) {
+                if (jqXHR.status = 200) {
+                    element.remove();
+                    $("#Name").focus();
+                }
+                else {
+                    alert("Erro" + jqXHR.status);
+                }
+            });
+        }
+
+        function Update(id, name, done, callback) {
+            $.post(("http://localhost:49274/Todo/Edit"), { id: id, name: name, done: done }, function (data, textstatus, jqXHR) {
+                if (jqXHR.status = 200) {
+                    if (typeof callback === "undefined")
+                        callback();
+                } else {
+                    alert("Erro" + jqXHR.status);
+                }
+            });
+
+        }
     </script>
 }
 
 <h2>@(ViewBag.Title)</h2>
 
-<ul>
+<ul id="taskList">
     @foreach (var item in Model)
     {
-        <li>
-            @Html.CheckBox("Done", item.Done, new { @class = "DoneBtn", @data_id = item.Id })
-            @Html.Label("Name", item.Name, new { @class = (item.Done ? "stroke" : "") })
-            <a class="DeleteBtn" data-id="@item.Id" href="#">X</a>
+        <li data-id="@item.Id">
+            @Html.CheckBox("Done", item.Done, new { @class = "DoneBtn" })
+            @Html.TextBox("Task", item.Name, new { @class = (item.Done ? "stroke inputTask" : " inputTask") })
+            <a class="DeleteBtn" href="#">X</a>
         </li>
     }
 

@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Microsoft.AspNet.SignalR;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using WebApplication.Models;
+using WebApplication.SignalrHub;
 
 namespace WebApplication.Controllers
 {
@@ -14,11 +16,11 @@ namespace WebApplication.Controllers
         public ActionResult Index()
         {
             var db = new DataContext();
-            var tasks = db.Tasks.OrderBy(x=>x.Id).ToList();
+            var tasks = db.Tasks.OrderBy(x => x.Id).ToList();
             return View(tasks);
         }
 
-       [HttpPost]
+        [HttpPost]
         public ActionResult Create(Task task)
         {
             var db = new DataContext();
@@ -26,9 +28,11 @@ namespace WebApplication.Controllers
             db.Tasks.Add(task);
             db.SaveChanges();
 
+            GlobalHost.ConnectionManager.GetHubContext<TasksHub>().Clients.All.newtask(task);
+
             return RedirectToAction("Index");
         }
-             
+
         [HttpPost]
         public ActionResult Edit(Task task)
         {
@@ -37,12 +41,14 @@ namespace WebApplication.Controllers
 
             taskOld.Name = task.Name;
             taskOld.Done = task.Done;
-            
+
             db.SaveChanges();
+
+            GlobalHost.ConnectionManager.GetHubContext<TasksHub>().Clients.All.newtask(task);
+
             return RedirectToAction("Index");
         }
 
-        
         public ActionResult Delete(Int32 Id)
         {
             var db = new DataContext();
@@ -52,7 +58,7 @@ namespace WebApplication.Controllers
 
             return new HttpStatusCodeResult(HttpStatusCode.OK);
         }
-        
+
         public ActionResult ChangeState(int Id)
         {
             var db = new DataContext();
