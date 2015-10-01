@@ -21,20 +21,21 @@ namespace WebApplication.Controllers
         }
 
         [HttpPost]
-        public ActionResult Create(Task task)
+        public ActionResult Create(Task task, String clientId = "")
         {
             var db = new DataContext();
 
             db.Tasks.Add(task);
             db.SaveChanges();
 
-            GlobalHost.ConnectionManager.GetHubContext<TasksHub>().Clients.All.newtask(task);
+            var hubCtx = GlobalHost.ConnectionManager.GetHubContext<TasksHub>();
+            hubCtx.Clients.AllExcept(clientId).newtask(task);
 
             return RedirectToAction("Index");
         }
 
         [HttpPost]
-        public ActionResult Edit(Task task)
+        public ActionResult Edit(Task task, String clientId = "")
         {
             var db = new DataContext();
             var taskOld = db.Tasks.Single(t => t.Id == task.Id);
@@ -44,7 +45,8 @@ namespace WebApplication.Controllers
 
             db.SaveChanges();
 
-            GlobalHost.ConnectionManager.GetHubContext<TasksHub>().Clients.All.newtask(task);
+            var hubCtx = GlobalHost.ConnectionManager.GetHubContext<TasksHub>();
+            hubCtx.Clients.AllExcept(clientId).newtask(task);
 
             return RedirectToAction("Index");
         }
